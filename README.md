@@ -48,5 +48,8 @@
 	
 	# 输入训练次数100次
 	100
-	
+
+## 数据集
+
+[Neural Networks for Face Recognition](http://www.cs.cmu.edu/afs/cs.cmu.edu/user/mitchell/ftp/faces.html)
 	
