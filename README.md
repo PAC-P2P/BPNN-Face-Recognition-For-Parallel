@@ -17,8 +17,8 @@
 	
 	cd libcstl
 	
-	# 配置环境
-	./configure
+	# 配置环境，[指定安装路径]
+	./configure [--prefix=newpath] 
 	
 	# 编译
 	make
