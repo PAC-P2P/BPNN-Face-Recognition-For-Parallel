@@ -270,21 +270,25 @@ void bpnn_train_parallel(BPNN *net, double ***input_grad, double ***hidden_grad,
         //测试网络
 	    performance_on_imagelist(net, testlist, 0, map_user);
 
-        //保存网络
-	    bpnn_save(net, netname);
     }
     printf("\n--------end train parallel------\n");
 
-    /************** 预测结果 ****************************/
-
-    // 输出测试集中每张图片的匹配情况
-    printf("Matching at the end of the iteration: \n\n");
-    printf("Test set 1 : \n\n");
-    result_on_imagelist(net, testlist, 0, map_user);
-
-    /** Save the trained network **/
-    if (epochs > 0) {
+    if(0 == id)
+    {
+        //保存网络
         bpnn_save(net, netname);
+
+        /************** 预测结果 ****************************/
+
+        // 输出测试集中每张图片的匹配情况
+        printf("Matching at the end of the iteration: \n\n");
+        printf("Test set 1 : \n\n");
+        result_on_imagelist(net, testlist, 0, map_user);
+
+        /** Save the trained network **/
+        if (epochs > 0) {
+            bpnn_save(net, netname);
+        }
     }
 }
 
