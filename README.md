@@ -48,6 +48,25 @@
 	
 	# 输入训练次数为100次
 	100
+	
+## 目录结构	
+
+	.
+	├── README.md
+	├── data.zip				# 训练集的图片
+	└── src
+    	├── Makefile			# Makefile文件
+    	├── all_test.list		# 测试集图片路径1
+    	├── all_test2.list		# 测试集图片路径2
+    	├── all_train.list		# 训练集图片路径
+    	├── backprop.c			# 神经网络模块，支持三层全连接前馈神经网络，使用 backpropagation 算法来调整权值
+    	├── backprop.h
+    	├── imagenet.c			# 图片网络模块，用于装载图片到网络的输入单元，和设置训练的目标向量的接口程序
+    	├── imagenet.h			
+    	├── main.c				# 主函数，调用其他模块实现BP神经网络人脸识别整个流程，包括并行模块
+    	├── pgmimage.c			# 图片处理模块，支持读写 PGM 文件和像素的存取/赋值，提供了 IMAGE 数据结构和 IMAGELIST 数据结构
+    	└── pgmimage.h
+
 
 ## 数据集
 
