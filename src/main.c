@@ -17,6 +17,9 @@
 // 测试集名
 #define TESTNAME "all_test.list"
 
+// 网络名
+#define NETNAME "BPNNnet"
+
 // 训练种子
 #define SEED 201600608+id*1000
 
@@ -108,23 +111,6 @@ int main(int argc, char *argv[]) {
     // map初始化
     map_init(map_user);
 
-    //创建映射需要指定两个函数，hashCode函数和equal函数。
-//    MyHashMap * map_user = createMyHashMap(myHashCodeString, myEqualString);
-
-//    //插入数据
-//    for (int i=0; i<S; i++)
-//    {
-//        myHashMapPutData(map, strs[i], &data[i]);
-//    }
-//
-//    //输出大小
-//    printf("size=%d\n",myHashMapGetSize(map));
-
-
-    //IMAGELIST *test1=NULL;
-    //IMAGELIST *test2=NULL;
-    // int savedelta;
-
     MPI_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &id);
@@ -157,8 +143,13 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
+    /*** 初始化神经网络包 ***/
     // 初始化训练种子
     bpnn_initialize(SEED);
+
+    /*** 显示训练集,测试集中图片数量 ***/
+    printf("%d images in training set\n", trainlist->n);
+    printf("%d images in test set\n", testlist->n);
 
     // 选择阶段的并行训练
     backprop_face_parallel(trainlist, id, &net, sume, map_user);
@@ -209,17 +200,17 @@ void bpnn_train_parallel(BPNN *net, double ***input_grad, double ***hidden_grad,
                          double ***input_gobal_grad, double ***hidden_gobal_grad, IMAGELIST *trainlist, IMAGELIST *testlist, int id, map_t *map_user) {
     int i, j, k;
     double out_err, hid_err, sumerr;
-    char netname[256]="BPNNnet";//bpnn网络名称
+    char netname[256]=NETNAME;//bpnn网络名称
 
-    printf("\n--------begin train parallel-------\n");
-    printf("\n---epochs=%d\n", epochs);
+    printf("[id=%d] --------begin train parallel-------\n", id);
+    printf("[id=%d] Train times: %d\n", id, epochs);
 
     *input_gobal_grad = alloc_2d_dbl(net->input_n + 1, net->hidden_n + 1);
     *input_grad = alloc_2d_dbl(net->input_n + 1, net->hidden_n + 1);
     *hidden_gobal_grad = alloc_2d_dbl(net->hidden_n + 1, net->output_n + 1);
     *hidden_grad = alloc_2d_dbl(net->hidden_n + 1, net->output_n + 1);
 
-    printf("\ntrain_n=%d,id=%d\n", trainlist->n, id);
+    printf("[id=%d] train_n=%d\n", id, trainlist->n);
 
     for (i = 1; i <= epochs; i++) {
 
@@ -250,46 +241,45 @@ void bpnn_train_parallel(BPNN *net, double ***input_grad, double ***hidden_grad,
         //if(id==0)
         //{print_2d(*hidden_gobal_grad,net->hidden_n+1,net->output_n+1);}
 
-        printf("\n------2------\n");
+        //printf("------2------\n");
 
         Bcast_2d(*input_gobal_grad, net->input_n + 1, net->hidden_n + 1, 0);
         Bcast_2d(*hidden_gobal_grad, net->hidden_n + 1, net->output_n + 1, 0);
         //printf("\n-------id=%d------\n",id);
         //print_2d(*hidden_gobal_grad,net->input_n+1,net->hidden_n+1);
         MPI_Barrier(MPI_COMM_WORLD);
-        printf("\n------3------\n");
+        //printf("------3------\n");
 
         bpnn_adjust_weights_parallel(*input_gobal_grad, net->input_n, net->hidden_n, net->input_weights,
                                      net->input_prev_weights, learning_rate, momentum);
-        printf("\n--------4------\n");
+        //printf("--------4------\n");
 
         bpnn_adjust_weights_parallel(*hidden_gobal_grad, net->hidden_n, net->output_n, net->hidden_weights,
                                      net->hidden_prev_weights, learning_rate, momentum);
-        printf("\n--------end train parallel   1------\n");
 
-        //测试网络
-	    performance_on_imagelist(net, testlist, 0, map_user);
-
+        //printf("--------end train parallel   1------\n");
     }
-    printf("\n--------end train parallel------\n");
+    printf("[id=%d] --------end train parallel------\n", id);
 
-    if(0 == id)
+    // printf("[id=%d] --------print Net------\n", id);
+    // printNet(net, id);
+
+    if(0 == id && epochs > 0)
     {
         //保存网络
         bpnn_save(net, netname);
-
-        /************** 预测结果 ****************************/
-
-        // 输出测试集中每张图片的匹配情况
-        printf("Matching at the end of the iteration: \n\n");
-        printf("Test set 1 : \n\n");
-        result_on_imagelist(net, testlist, 0, map_user);
-
-        /** Save the trained network **/
-        if (epochs > 0) {
-            bpnn_save(net, netname);
-        }
     }
+
+    //测试网络
+    printf("[id=%d] --------performance testlist------\n", id);
+    performance_on_imagelist(net, testlist, 0, map_user);
+
+    /************** 预测结果 ****************************/
+
+    // 输出测试集中每张图片的匹配情况
+    printf("Matching at the end of the iteration: \n\n");
+    printf("Test set : \n\n");
+    result_on_imagelist(net, testlist, 0, map_user);
 }
 
 /***
@@ -297,7 +287,7 @@ void bpnn_train_parallel(BPNN *net, double ***input_grad, double ***hidden_grad,
 ***/
 void bpnn_adjust_weights_parallel(double **grad, int rows, int cols, double **w, double **oldw, double learning_rate,
                                   double momentum) {
-    printf("\n------adjust weight-----\n");
+    //printf("\n------adjust weight-----\n");
     double new_dw;
     int k, j;
 
@@ -323,7 +313,7 @@ void reduce_main(double **a, double **b, int rows, int cols) {
     for (i = 0; i < rows; i++)
         for (j = 0; j < cols; j++)
             MPI_Reduce(*(a + i) + j, *(b + i) + j, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    printf("\n------reduce done------\n");
+    //printf("\n------reduce done------\n");
 }
 
 
@@ -463,8 +453,8 @@ int selectBestNet(double sume[], int id, BPNN *net, int n_p) {
 
         MPI_Recv(&sume[i], 1, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &status);
 
-    printf("id=%d\n", id);
-    print_1d(sume, n_p);
+    //printf("id=%d\n", id);
+    //print_1d(sume, n_p);
 
     min_sumerr = sume[0];
 
@@ -485,7 +475,7 @@ int selectBestNet(double sume[], int id, BPNN *net, int n_p) {
 void sendNet(BPNN *net, int id) {
     if (id == 0)
         return;
-    printf("\nsendNet--------\n");
+    //printf("\nsendNet--------\n");
     MPI_Send(&net->input_n, 1, MPI_INT, 0, id, MPI_COMM_WORLD);
 
     MPI_Send(&net->hidden_n, 1, MPI_INT, 0, id, MPI_COMM_WORLD);
@@ -503,7 +493,7 @@ void sendNet(BPNN *net, int id) {
     // MPI_Send(net->output_delta,net->output_n+1,MPI_DOUBLE,0,id,MPI_COMM_WORLD);
 
     //MPI_Send(net->target,net->output_n+1,MPI_DOUBLE,0,id,MPI_COMM_WORLD);
-    printf("\nsend_2d----\n");
+    //printf("\nsend_2d----\n");
 
     //发送二维数组
 
@@ -514,7 +504,7 @@ void sendNet(BPNN *net, int id) {
     //send_2d(net->input_prev_weights,net->input_n+1,net->hidden_n+1,id,0);
 
     //send_2d(net->hidden_prev_weights,net->hidden_n+1,net->output_n+1,id,0);
-    printf("\nsendNet done--------\n");
+    //printf("\nsendNet done--------\n");
 
 }
 
@@ -523,7 +513,7 @@ void sendNet(BPNN *net, int id) {
        发送二维数组
 ***/
 void send_2d(double **arry, int rows, int cols, int where, int desnation) {
-    printf("\nsende_2d--\n");
+    //printf("\nsende_2d--\n");
     int i;
 
     for (i = 0; i < rows; i++)
@@ -540,7 +530,7 @@ void send_2d(double **arry, int rows, int cols, int where, int desnation) {
 void recvNet(BPNN *net, int id) {
     if (id == 0)
         return;
-    printf("\nrecv Net--------\n");
+    //printf("\nrecv Net--------\n");
     MPI_Status status;
 
     MPI_Recv(&net->input_n, 1, MPI_INT, id, id, MPI_COMM_WORLD, &status);
@@ -560,7 +550,7 @@ void recvNet(BPNN *net, int id) {
     //MPI_Recv(net->output_delta,net->output_n+1,MPI_DOUBLE,id,id,MPI_COMM_WORLD,&status);
 
     //MPI_Recv(net->target,net->output_n+1,MPI_DOUBLE,id,id,MPI_COMM_WORLD,&status);
-    printf("\nrecv_2d---------\n");
+    //printf("\nrecv_2d---------\n");
 
     //接收二维数组
 
@@ -571,7 +561,7 @@ void recvNet(BPNN *net, int id) {
     //recv_2d(net->input_prev_weights,net->input_n+1,net->hidden_n+1,id);
 
     //recv_2d(net->hidden_prev_weights,net->hidden_n+1,net->output_n+1,id);
-    printf("\nrecv Net done------\n");
+    //printf("\nrecv Net done------\n");
 }
 
 
@@ -580,7 +570,7 @@ void recvNet(BPNN *net, int id) {
 ***/
 
 void recv_2d(double **arry, int rows, int cols, int id) {
-    printf("\nrecv_2d--\n");
+    //printf("\nrecv_2d--\n");
     int i;
 
     MPI_Status status;
@@ -688,7 +678,7 @@ void imgl_load_images_from_textfile_id_user(IMAGELIST *il, char *filename, int i
         if (i == id_temp) {
 
             imgl_munge_name(buf);
-            printf("Loading '%s'...    id =%d\n", buf, id);
+            printf("[id =%d] Loading '%s'...\n", id, buf);
             fflush(stdout);
 
             // 获取每个用户的名字
@@ -746,7 +736,7 @@ void backprop_face_parallel(IMAGELIST *trainlist, int id, BPNN **net, double sum
     IMAGE *iimage;
     train_n = trainlist->n;
 
-    printf("train_n:%d,id=%d\n", train_n, id);
+    printf("[id=%d] train_n:%d\n", id, train_n);
 
     iimage = trainlist->list[0];
 
@@ -778,18 +768,18 @@ void backprop_face_parallel(IMAGELIST *trainlist, int id, BPNN **net, double sum
 int evaluate_performance(BPNN *net, double *err)
 {
   bool flag = true; // 样例匹配成功为true
-  
+
   *err = 0.0;
   double delta;
-  
+
   // 计算输出层均方误差之和
-  for (int j = 1; j <= net->output_n; j++) 
+  for (int j = 1; j <= net->output_n; j++)
   {
     delta = net->target[j] - net->output_units[j];
     *err += (0.5 * delta * delta);
   }
-  
-  
+
+
   for (int j = 1; j <= net->output_n; j++) {
     /*** If the target unit is on... ***/
     if (net->target[j] > 0.5) {
@@ -844,12 +834,12 @@ int performance_on_imagelist(BPNN *net, IMAGELIST *il, int list_errors, map_t *m
       if (evaluate_performance(net, &val)) {
         //匹配成功，计数器加1
         correct++;
-      } 
-      else if (list_errors) 
+      }
+      else if (list_errors)
       {
         printf("%s", NAME(il->list[i]));
 
-        // for (j = 1; j <= net->output_n; j++) 
+        // for (j = 1; j <= net->output_n; j++)
         // {
         //   printf("%.3f ", net->output_units[j]);
         // }
