@@ -12,8 +12,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
-#include <sys/types.h>   
-#include <sys/stat.h>   
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include "backprop.h"
 
@@ -222,7 +222,7 @@ BPNN *bpnn_create(int n_in,int n_hidden,int n_out)
 // l1: 从l1层神经元传来的输入信号
 // l2: 从l2层神经元传来的输入信号
 // conn: l1层到l2层的连接权值
-// n1: l1层神经元个数 
+// n1: l1层神经元个数
 // n2: l2层神经元个数
 void bpnn_layerforward(double *l1,double *l2,double **conn,int n1,int n2)
 {
@@ -235,17 +235,17 @@ void bpnn_layerforward(double *l1,double *l2,double **conn,int n1,int n2)
 
   // 遍历下一层的神经元
   /*** For each unit in second layer ***/
-  for (j = 1; j <= n2; j++) 
+  for (j = 1; j <= n2; j++)
   {
     /*** Compute weighted sum of its inputs ***/
     // 计算神经元的输入加权和
     sum = 0.0;
-    
-    for (k = 0; k <= n1; k++) 
+
+    for (k = 0; k <= n1; k++)
     {
       sum += conn[k][j] * l1[k];  // 净激活
     }
-    
+
     // 激活函数 squash == sigmoid
     l2[j] = squash(sum);
   }
@@ -259,16 +259,16 @@ void bpnn_output_error(double *delta,double *target,double *output, int nj,doubl
   double o, t, errsum;
 
   errsum = 0.0;
-  
+
   // 遍历输出层单元
-  for (j = 1; j <= nj; j++) 
+  for (j = 1; j <= nj; j++)
   {
     o = output[j];
     t = target[j];
     delta[j] = o * (1.0 - o) * (t - o);
     errsum += ABS(delta[j]);
   }
-  
+
   *err = errsum;
 }
 
@@ -279,18 +279,18 @@ void bpnn_hidden_error(double *delta_h,int nh,double *delta_o,int no,double **wh
   double h, sum, errsum;
 
   errsum = 0.0;
-  for (j = 1; j <= nh; j++) 
+  for (j = 1; j <= nh; j++)
   {
     h = hidden[j];
     sum = 0.0;
-    for (k = 1; k <= no; k++) 
+    for (k = 1; k <= no; k++)
     {
       sum += delta_o[k] * who[j][k];
     }
     delta_h[j] = h * (1.0 - h) * sum;
     errsum += ABS(delta_h[j]);
   }
-  
+
   *err = errsum;
 }
 
@@ -302,14 +302,14 @@ void bpnn_adjust_weights(double *delta,int ndelta,double *ly,int nly,double **w,
   int k, j;
 
   ly[0] = 1.0;
-  
+
   for (j = 1; j <= ndelta; j++) // 遍历输出层单元 / 隐藏层单元
   {
     for (k = 0; k <= nly; k++)  // 遍历隐藏层单元 / 输入层单元
     {
       // 新的权值增量
       new_dw = ((learning_rate * delta[j] * ly[k]) + (momentum * oldw[k][j]));
-      
+
       w[k][j] += new_dw;
       oldw[k][j] = new_dw;  // 保存权值增量，用于下次迭代时权值的更新(与冲量相乘加到权值增量中)
     }

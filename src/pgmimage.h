@@ -7,9 +7,14 @@
  ******************************************************************
  */
 
-#ifndef _PGMIMAGE_H_
+#ifndef BPNN_PGMIMAGE_H
 
-#define _PGMIMAGE_H_
+#define BPNN_PGMIMAGE_H
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <cstl/cmap.h>
 
 typedef struct {
   char *name;
@@ -37,7 +42,8 @@ int img_getpixel(IMAGE *, int, int);
 int img_write(IMAGE *, char *);
 void img_free(IMAGE *);
 
-void imgl_load_images_from_textfile(IMAGELIST *, char *);
+//void imgl_load_images_from_textfile(IMAGELIST *, char *);
+void imgl_load_images_from_textfile_map(IMAGELIST *, char *, int, int, map_t *);
 
 IMAGELIST *imgl_alloc();
 void imgl_add(IMAGELIST *, IMAGE *);

@@ -7,13 +7,11 @@
  ******************************************************************
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+
 #include "pgmimage.h"
 
-extern void *malloc();
-extern void *realloc();
+//extern void *malloc();
+//extern void *realloc();
 //extern char *strcpy();
 
 char *img_basename(char *filename)
@@ -279,11 +277,50 @@ int imgl_munge_name(char *buf)
 }
 
 
-void imgl_load_images_from_textfile(IMAGELIST *il,char *filename)
-{
+//void imgl_load_images_from_textfile(IMAGELIST *il,char *filename)
+//{
+//  IMAGE *iimg;
+//  FILE *fp;
+//  char buf[20000];  // 这个字符数组长度一定要长，因为它接受的list文件流长度可能会很长
+//
+//  if (filename[0] == '\0') {
+//    printf("IMGL_LOAD_IMAGES_FROM_TEXTFILE: Invalid file '%s'\n", filename);
+//  }
+//
+//  if ((fp = fopen(filename, "r")) == NULL) {
+//    printf("IMGL_LOAD_IMAGES_FROM_TEXTFILE: Couldn't open '%s'\n", filename);
+//  }
+//
+//  while (fgets(buf, 19999, fp) != NULL) {
+//
+//    imgl_munge_name(buf);
+//    printf("Loading '%s'...", buf);  fflush(stdout);
+//    if ((iimg = img_open(buf)) == 0)
+//    {
+//      printf("Couldn't open '%s'\n", buf);
+//    }
+//    else
+//    {
+//      imgl_add(il, iimg);
+//      printf("done\n");
+//    }
+//    fflush(stdout);
+//  }
+//
+//  fclose(fp);
+//}
+
+/***
+ 加载图片集
+***/
+void imgl_load_images_from_textfile_map(IMAGELIST *il, char *filename, int id, int n, map_t *map_user) {
   IMAGE *iimg;
   FILE *fp;
-  char buf[20000];  // 这个字符数组长度一定要长，因为它接受的list文件流长度可能会很长
+  char buf[20000], userid[40];
+  int id_temp, i_userNum = 1, i = 0;
+  size_t mapSize = 0;
+
+  id_temp = id;
 
   if (filename[0] == '\0') {
     printf("IMGL_LOAD_IMAGES_FROM_TEXTFILE: Invalid file '%s'\n", filename);
@@ -295,21 +332,61 @@ void imgl_load_images_from_textfile(IMAGELIST *il,char *filename)
 
   while (fgets(buf, 19999, fp) != NULL) {
 
-    imgl_munge_name(buf);
-    printf("Loading '%s'...", buf);  fflush(stdout);
-    if ((iimg = img_open(buf)) == 0) 
+    if(i == id_temp)
     {
-      printf("Couldn't open '%s'\n", buf);
-    } 
-    else 
-    {
-      imgl_add(il, iimg);
-      printf("done\n");
+      // printf("[i = %d, n = %d]\n", i, n);
+
+      imgl_munge_name(buf);
+      printf("Loading '%s'...", buf);
+      fflush(stdout);
+
+      // 获取每个用户的名字
+      sscanf(buf, "%*[^/]/%*[^/]/%[^/]", userid);
+
+      // 获取map中元素个数
+      mapSize = map_size(map_user);
+
+      // map迭代器
+      map_iterator_t iterator;
+
+      if(iterator_equal(map_find(map_user, userid), map_end(map_user)))
+      {
+        // 插入
+        *(int *)map_at(map_user,userid) = i_userNum;
+      }
+
+      // printf("##%s --> %d##", userid, *(int *)map_at(map_user, userid));
+
+      if(mapSize < map_size(map_user))
+      {
+        printf("插入成功, [%s] --> [%d]\n", userid, i_userNum);
+        // 插入成功
+        i_userNum++;
+      }
+
+      if ((iimg = img_open(buf)) == 0)
+      {
+        printf("Couldn't open '%s'\n", buf);
+      }
+      else
+      {
+        imgl_add(il, iimg);
+        printf("done\n");
+      }
+      fflush(stdout);
+      id_temp = id_temp + n;
     }
-    fflush(stdout);
+    i++;
   }
 
   fclose(fp);
+  //
+  // // map迭代器
+  // map_iterator_t iterator;
+  //
+  // printf("\n-------map--------\n");
+  // // 遍历map
+  // for (iterator = map_begin(map_user); !iterator_equal(iterator, map_end(map_user)); iterator = iterator_next(iterator)) {
+  //   printf("<%s, %d>\n", (char *) pair_first((const pair_t *) iterator_get_pointer(iterator)), *(int *) pair_second((const pair_t *) iterator_get_pointer(iterator)));
+  // }
 }
-
-

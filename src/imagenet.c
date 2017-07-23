@@ -55,7 +55,9 @@ int load_target(IMAGE *img,BPNN *net, map_t *map_user)
         {
             // 则此用户对应的输出结点标记为 TARGET_HIGH
             net->target[*(int *) pair_second(iterator_get_pointer(iterator))] = TARGET_HIGH;
-        }
+
+            //printf("target[%d]= %f, <%s, %d>\n",*(int *) pair_second(iterator_get_pointer(iterator)),net->target[*(int *) pair_second(iterator_get_pointer(iterator))], (char *) pair_first(iterator_get_pointer(iterator)), *(int *) pair_second(iterator_get_pointer(iterator)) );
+          }
     }
  
   return 0;

@@ -2,8 +2,8 @@
 // Created by xx on 17/7/13.
 //
 
-#ifndef FACEREC_IMAGENET_H
-#define FACEREC_IMAGENET_H
+#ifndef BPNN_IMAGENET_H
+#define BPNN_IMAGENET_H
 
 #include <stdio.h>
 #include <string.h>
@@ -17,5 +17,4 @@
 int load_target(IMAGE *img,BPNN *net, map_t *map_user);
 int load_input_with_image(IMAGE *img,BPNN *net);
 
-
-#endif //FACEREC_IMAGENET_H
+#endif //BPNN_IMAGENET_H

@@ -7,9 +7,9 @@
  ******************************************************************
  */
 
-#ifndef _BACKPROP_H_
+#ifndef BPNN_BACKPROP_H
 
-#define _BACKPROP_H_
+#define BPNN_BACKPROP_H
 
 #define BIGRND 0x7fffffff       // 最大的带符号整型数
 
