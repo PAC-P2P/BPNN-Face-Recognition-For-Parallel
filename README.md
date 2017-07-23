@@ -74,14 +74,14 @@ Qt 版请戳：[Github . PAC-P2P/BPNN-Face-Recognition-For-Qt](https://github.co
     	├── evaluate.h
     	├── imagenet.c			# 图片网络模块，用于装载图片到网络的输入单元，和设置训练的目标向量的接口程序
     	├── imagenet.h
-    	├── main.c				# 主函数，调用其他模块实现BP神经网络人脸识别整个流程
-    	├── parallelModule.c	# 并行模块，使用 MPI 做并行通讯
+    	├── main.c			# 主函数，调用其他模块实现BP神经网络人脸识别整个流程
+    	├── parallelModule.c		# 并行模块，使用 MPI 做并行通讯
     	├── parallelModule.h
     	├── pgmimage.c			# 图片处理模块，支持读写 PGM 文件和像素的存取/赋值
     	├── pgmimage.h
     	├── printNet.c			# 打印网络
     	├── printNet.h
-    	├── train.c				# 训练模块，BP神经网络的并行训练
+    	├── train.c			# 训练模块，BP神经网络的并行训练
     	└── train.h
 
 
