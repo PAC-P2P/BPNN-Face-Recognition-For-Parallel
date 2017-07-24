@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     //backprop_face(trainlist, testlist, traintimes, savedelta, netname, list_errors, map_user);
 
     // 选择阶段训练
-    backprop_face_choose(trainlist, id, net, SELETE, SAVEDELTA, sume, map_user);
+    backprop_face_choose(trainlist, id, &net, SELETE, SAVEDELTA, sume, map_user);
 
     if(id == 0)
  	{
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 	Bcast_Net(net, 0);
 
     //正式训练
-    //backprop_face_parallel(net,input_grad,hidden_grad,traintimes,LEARNRATE,IMPULSE,input_gobal_grad,hidden_gobal_grad,trainlist, testlist,id, map_user);
+    backprop_face_parallel(net,&input_grad,&hidden_grad,traintimes,LEARNRATE,IMPULSE,&input_gobal_grad,&hidden_gobal_grad,trainlist, testlist,id, map_user);
 
 	/************** 预测结果 ****************************/
     // 输出测试集中每张图片的匹配情况

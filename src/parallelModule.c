@@ -149,7 +149,7 @@ void recvNet(BPNN *net,int id){
 // 调整权值
 void bpnn_adjust_weights_parallel(double **grad, int rows, int cols, double **w, double **oldw, double learning_rate, double momentum)
 {
-    printf("\n------adjust weight-----\n");
+    //printf("\n------adjust weight-----\n");
     double new_dw;
     int k, j;
 
@@ -177,7 +177,7 @@ void reduce_main(double **a,double **b,int rows,int cols){
     for(i=0;i<rows;i++)
         for(j=0;j<cols;j++)
             MPI_Reduce(*(a+i)+j,*(b+i)+j,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-    printf("\n------reduce done------\n");
+    //printf("\n------reduce done------\n");
 }
 
 // 计算梯度

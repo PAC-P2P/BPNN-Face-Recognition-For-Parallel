@@ -29,5 +29,4 @@
 // 冲量
 #define IMPULSE 0.3
 
-
 #endif //BPNN_CONFIG_H
