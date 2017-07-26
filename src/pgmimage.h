@@ -42,8 +42,8 @@ int img_getpixel(IMAGE *, int, int);
 int img_write(IMAGE *, char *);
 void img_free(IMAGE *);
 
-//void imgl_load_images_from_textfile(IMAGELIST *, char *);
-void imgl_load_images_from_textfile_map(IMAGELIST *, char *, int, int, map_t *);
+void imgl_load_images_from_textfile(IMAGELIST *,char *, int, int);
+void imgl_load_images_from_textfile_map(int *, char *, map_t *);
 
 IMAGELIST *imgl_alloc();
 void imgl_add(IMAGELIST *, IMAGE *);

@@ -10,25 +10,29 @@ int  selectBestNet(double sume[], int id, BPNN *net, int n_p){
 
     int i;
     int k = 0;
-    double  min_sumerr;
+    double  max_sumerr;
 
     MPI_Status status;
+
+    // printf("\n-----------selectBestNet---111-----------\n");
 
     for(i = 1; i < n_p; i++)
     {
         MPI_Recv(&sume[i], 1, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &status);
     }
 
+    // printf("\n-----------selectBestNet---222--------------\n");
+
     //printf("id=%d\n",id);
     //print_1d(sume,n_p);
 
-    min_sumerr = sume[0];
+    max_sumerr = sume[0];
 
     for(i = 0; i < n_p; i++)
     {
-        if(sume[i] < min_sumerr)
+        if(sume[i] > max_sumerr)
         {
-            min_sumerr = sume[i];
+            max_sumerr = sume[i];
             k = i;
         }
     }

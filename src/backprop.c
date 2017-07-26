@@ -31,9 +31,10 @@
 
 // 用输入的种子(seed)初始化随机数生成器
 void bpnn_initialize(int seed)
-{ printf("\n-----------------------------\n");
+{
+  //printf("\n-----------------------------\n");
   printf("Random number generator seed: %d\n", seed);
-  printf("\n------------------------------\n");
+  //printf("\n------------------------------\n");
   srandom(seed);
 }
 

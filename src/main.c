@@ -11,26 +11,29 @@
 
 int main(int argc, char *argv[]) {
 
-	BPNN * net;
+		// IMAGE *iimg;
+		BPNN * net;
     IMAGELIST *trainlist, *testlist;
     int traintimes, seed, savedelta, list_errors;
     clock_t start, finish;
     int id;   							// 进程id
     int n_p;							// 进程数
-	int k=0;
+		int k=0;
+		int perTimes= SELETE, i, iterateTimes, userNum, userNumMax, train_n, imagesize;
     double time;
-    double  sume[1000];   				// 存储各进程误差  [可优化：获得进程数再定义]
+		double totalCorrect = 0, correctRate = 0, error = 0;
+		double correctRateSum, errorSum;
+    double  sume[100];   				// 存储各进程误差  [可优化：获得进程数再定义]
     double **hidden_gobal_grad = NULL;	// 隐藏层全局梯度
-	double **input_gobal_grad = NULL;	// 输出层全局梯度
-	double **hidden_grad = NULL;		// 隐藏层权值梯度
-	double **input_grad = NULL;			// 输入层权值梯度
-
+		double **input_gobal_grad = NULL;	// 输出层全局梯度
+		double **hidden_grad = NULL;		// 隐藏层权值梯度
+		double **input_grad = NULL;			// 输入层权值梯度
 
     char netname[30] = NETNAME;
     char trainname[256] = TRAINNAME;
     char testname[256] = TESTNAME;
 
-	seed = SEED;						// 种子
+		seed = SEED;									// 种子
     savedelta = SAVEDELTA;   			// 保存网络的周期
     list_errors = 0;
 
@@ -38,18 +41,43 @@ int main(int argc, char *argv[]) {
     trainlist = imgl_alloc();
     testlist = imgl_alloc();
 
-    // 创建存储用户名字的map
-    map_t *map_user = create_map(char*,int);
-    if (map_user == NULL) {
-        printf("Failed to create map\n");
-        exit(1);
-    }
+		/************** 创建map并加载训练集的人进map****************************/
+    // // 创建存储用户名字的map
+    // map_t *map_user = create_map(char*,int);
+		//
+		// if (map_user == NULL) {
+    //     printf("Failed to create map_user\n");
+    //     exit(1);
+    // }
 
     // map初始化
-    map_init(map_user);
+    // map_init(map_user);
+
+		// IMAGE分配空间
+		// iimg = (IMAGE *) malloc ((unsigned) (sizeof (IMAGE)));
+
+		/************** 加载训练集进map ****************************/
+		// 加载训练集进map，同时获得第一张图片（大小）
+		// imgl_load_images_from_textfile_map(iimg, trainname, map_user);
+
+		// 获得图片大小，即网络输入结点数
+		// imagesize = ROWS(iimg) * COLS(iimg);
+
+		// 获取map中人数，即网络隐藏、输出结点数
+		// userNum = map_size(map_user);
+
+		/************** 存储map ****************************/
+		//
+		// char ** mapUserArr = MapArrayInit(userNum+1, USERNAMESIZE);
+		//
+		// MapSaveToArray(map_user, mapUserArr);
+		//
+		// map_destroy(map_user);
+
+		/************** 开始并行****************************/
 
     // MPI初始化
-	MPI_Init(&argc,&argv);
+		MPI_Init(&argc,&argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD,&id);
 
@@ -59,87 +87,170 @@ int main(int argc, char *argv[]) {
         printf("please input the times of train:\n");
         scanf("%d", &traintimes);
 
-        /*** 开始计时 ***/
-        //start = clock();
+				if(traintimes < perTimes || traintimes % perTimes != 0)
+				{
+					printf("训练次数应该大于 %d 次，且为 %d 的整数倍！\n",perTimes, perTimes);
+					exit(-1);
+				}
+
     }
 
-    MPI_Bcast(&traintimes, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&traintimes, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		/*** 初始化神经网络包 ***/
+		bpnn_initialize(seed+id*999);
+
+		/************** 创建map并加载	训练集的人进map****************************/
+		// 创建存储用户名字的map
+		map_t *map_user = create_map(char*,int);
+
+		if (map_user == NULL) {
+			 printf("Failed to create map_user\n");
+			 exit(1);
+		}
+
+		// map初始化
+		map_init(map_user);
+
+		/************** 加载训练集进map ****************************/
+		// 加载训练集进map，同时获得第一张图片（大小）
+		imgl_load_images_from_textfile_map(&imagesize, trainname, map_user);
+
+		// 获取map中人数，即网络隐藏、输出结点数
+		userNum = map_size(map_user);
+
+		/************** 创建网络 ****************************/
+
+		net=bpnn_create(imagesize,userNum,userNum);
+
+		/************** 结束创建网络 ****************************/
+
+		/************** 开始计时****************************/
 
     time=-MPI_Wtime();
 
-    /*** If any train, test1, or test2 sets have been specified, then
-     load them in. ***/
+		/************** 加载训练集、测试集 ****************************/
     if (trainname[0] != '\0')
     {
     	printf("\n-------load trainlist--------\n");
-        imgl_load_images_from_textfile_map(trainlist, trainname, id, n_p, map_user);
+      imgl_load_images_from_textfile(trainlist, trainname, id, n_p);
     }
     if (testname[0] != '\0')
      {
      	printf("\n-------load testlist--------\n");
-     	imgl_load_images_from_textfile_map(testlist, testname, id, n_p, map_user);
+     	imgl_load_images_from_textfile(testlist, testname, id, n_p);
      }
 
-    /*** 初始化神经网络包 ***/
-    /*** Initialize the neural net package ***/
-    bpnn_initialize(seed);
-
-    /*** 显示训练集，测试集1，测试集2中图片数量 ***/
-    /*** Show number of images in train, test1, test2 ***/
+  	/************** 显示训练集，测试集中图片数量****************************/
     printf("[%d] %d images in training set\n", id, trainlist->n);
     printf("[%d] %d images in test set\n", id, testlist->n);
 
-    /*** If we've got at least one image to train on, go train the net ***/
-    // 假如我们至少有1张图片来训练，那么就开始训练吧！
-    //backprop_face(trainlist, testlist, traintimes, savedelta, netname, list_errors, map_user);
+		/************** 并行创建map ****************************/
 
-    // 选择阶段训练
-    backprop_face_choose(trainlist, id, &net, SELETE, SAVEDELTA, sume, map_user);
+		// map_t * map_user_parallel = create_map(char*,int);
+		// if (map_user_parallel == NULL) {
+    //     printf("Failed to create map\n");
+    //     exit(1);
+    // }
+		// map_init(map_user_parallel);
+		//
+		// ArrayInsertToMap(mapUserArr, userNum+1, map_user_parallel);
 
-    if(id == 0)
- 	{
-	 	k = selectBestNet(sume, id, net, n_p);
-    }
 
-	MPI_Bcast(&k, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		/************** 开始训练 ****************************/
 
-	MPI_Barrier(MPI_COMM_WORLD);
+		train_n = trainlist->n;
 
-	if(id == k)
-	{
-		//printNet(net,id);
-		sendNet(net, k);
-	}
+		iterateTimes = traintimes / perTimes;
 
-	if(id == 0)
-	{
-		recvNet(net, k);
-	}
+		for (i = 1; i <= iterateTimes; i++) {
 
-	Bcast_Net(net, 0);
+			// 选择阶段训练
+	    backprop_face_choose(trainlist, train_n, id, net, perTimes, i, SAVEDELTA, &totalCorrect, map_user);
+
+			if(id==0){
+			    sume[0]=totalCorrect;
+			}
+			else{
+			    MPI_Send(&totalCorrect,1,MPI_DOUBLE,0,id,MPI_COMM_WORLD);
+			}
+
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			if(id == 0)
+	 		{
+		 		k = selectBestNet(sume, id, net, n_p);
+
+				// if(i == iterateTimes) break;
+	    }
+
+			MPI_Bcast(&k, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			if(id == k)
+			{
+				sendNet(net, k);
+			}
+
+			if(id == 0)
+			{
+				recvNet(net, k);
+			}
+
+			Bcast_Net(net, 0);
+		}
+
+		/************** 结束训练 ****************************/
 
     //正式训练
-    backprop_face_parallel(net,&input_grad,&hidden_grad,traintimes,LEARNRATE,IMPULSE,&input_gobal_grad,&hidden_gobal_grad,trainlist, testlist,id, map_user);
+    //backprop_face_parallel(net,&input_grad,&hidden_grad,traintimes,LEARNRATE,IMPULSE,&input_gobal_grad,&hidden_gobal_grad,trainlist, testlist,id, map_user);
 
-	/************** 预测结果 ****************************/
-    // 输出测试集中每张图片的匹配情况
-    printf("迭代结束后的匹配情况：\n\n");
-    printf("测试集1：\n\n");
-    result_on_imagelist(net, testlist, 0, map_user);
+	// if(id == k)
+	// {
+		/************** 预测结果 ****************************/
+	    // 输出测试集中每张图片的匹配情况
+	    printf("迭代结束后的匹配情况：\n\n");
+	    printf("[%d] 测试集1：\n\n", id);
+	    result_on_imagelist(net, testlist, 0, map_user, &correctRate, &error);
+	// }
 
-		time+=MPI_Wtime();
+	// if (id == 0) {
+		MPI_Reduce(&correctRate,&correctRateSum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+		MPI_Reduce(&error,&errorSum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+	// }
+
+	// MPI_Barrier(MPI_COMM_WORLD);
+
+	// MPI_Barrier(MPI_COMM_WORLD);
+
+	/************** 结束计时****************************/
+	time+=MPI_Wtime();
 	MPI_Finalize();
 
 	if(id == 0)
 	{
-		printf("\ntime=%f,k=%d\n",time,k);
+		printf("\nAccuracy rate of: %g%%  Average error: %g \n\n", correctRateSum/n_p, errorSum/n_p);
 
-	    // /*** 结束计时 ***/
-    	// finish = clock();
-   	// 	printf( "\nUse %f seconds\n", (double)(finish - start) / CLOCKS_PER_SEC);
+		printf("Used  %f  seconds\n\n", time);
+
+		/************** 保存网络 ****************************/
+		bpnn_save(net, netname);
+
+		printf("\n");
 	}
 
-    exit(0);
+	/************** 释放内存 ****************************/
+
+	// img_free(iimg);
+	imgl_free(trainlist);
+	imgl_free(testlist);
+	bpnn_free(net);
+	map_destroy(map_user);
+
+	// MapArrayDestroy(mapUserArr, userNum+1);
+
+  exit(0);
 }

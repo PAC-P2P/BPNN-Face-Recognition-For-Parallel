@@ -50,7 +50,7 @@ int evaluate_performance(BPNN *net, double *err)
 /*** Computes the performance of a net on the images in the imagelist. ***/
 /*** Prints out the percentage correct on the image set, and the
      average error between the target and the output units for the set. ***/
-int performance_on_imagelist(BPNN *net, IMAGELIST *il, int list_errors, map_t *map_user)
+int performance_on_imagelist(BPNN *net, IMAGELIST *il, int list_errors, map_t *map_user, double *totalCorrect)
 {
     double err, val;
     int i, n, j, correct;
@@ -102,22 +102,28 @@ int performance_on_imagelist(BPNN *net, IMAGELIST *il, int list_errors, map_t *m
         if (!list_errors)
             printf("0.0 0.0 ");
     }
+    if(NULL != totalCorrect)
+    {
+      *totalCorrect = (double)correct;
+    }
+
     return 0;
 }
 
 // 评估图片集的匹配情况
-void result_on_imagelist(BPNN *net, IMAGELIST *il, int list_errors, map_t *map_user)
+void result_on_imagelist(BPNN *net, IMAGELIST *il, int list_errors, map_t *map_user, double *correctRate, double *error)
 {
-    double err, val;
+    double val;
     int i, n, j, correct;
 
-    err = 0.0;
+    *error = 0.0;
     correct = 0;
 
     n = il->n; // 图片集元素个数
 
     if (n > 0) {
         for (i = 0; i < n; i++) {
+
             /*** Load the image into the input layer. **/
             // 装载图片到输入层
             load_input_with_image(il->list[i], net);
@@ -133,37 +139,41 @@ void result_on_imagelist(BPNN *net, IMAGELIST *il, int list_errors, map_t *map_u
             // 输出图片的名称
             printf("Picture name: %s\n", NAME(il->list[i]));
 
-            size_t map_userNum = map_size(map_user), i_flag_num = 0, i_flag_i = 0;
+            /******************* 识别具体是哪个人. ******************/
 
-            // map迭代器
-            map_iterator_t iterator;
+            // size_t map_userNum = map_size(map_user), i_flag_num = 0, i_flag_i = 0;
+            //
+            // // map迭代器
+            // map_iterator_t iterator;
+            //
+            // for(size_t i = 1; i  <= map_userNum; ++i)
+            // {
+            //     // printf("--output_units-->> %f\n", net->output_units[i]);
+            //     if(net->output_units[i] > 0.5)
+            //     {
+            //         // 统计输出权值大于0.5的输出单元个数和索引
+            //         i_flag_num ++;
+            //         i_flag_i = i;
+            //     }
+            // }
+            //
+            // if(1 == i_flag_num)
+            // {
+            //     // 遍历map
+            //     for (iterator = map_begin(map_user); !iterator_equal(iterator, map_end(map_user)); iterator = iterator_next(iterator)) {
+            //
+            //         if(i_flag_i == *(int *) pair_second((const pair_t *) iterator_get_pointer(iterator)))
+            //         {
+            //             printf("He is 【%s】 \n", (char *) pair_first((const pair_t *) iterator_get_pointer(iterator)));
+            //         }
+            //     }
+            // }
+            // else
+            // {
+            //     printf("I do not know who he is...\n");
+            // }
 
-            for(size_t i = 1; i  <= map_userNum; ++i)
-            {
-                printf("--output_units-->> %f\n", net->output_units[i]);
-                if(net->output_units[i] > 0.5)
-                {
-                    // 统计输出权值大于0.5的输出单元个数和索引
-                    i_flag_num ++;
-                    i_flag_i = i;
-                }
-            }
-
-            if(1 == i_flag_num)
-            {
-                // 遍历map
-                for (iterator = map_begin(map_user); !iterator_equal(iterator, map_end(map_user)); iterator = iterator_next(iterator)) {
-
-                    if(i_flag_i == *(int *) pair_second((const pair_t *) iterator_get_pointer(iterator)))
-                    {
-                        printf("He is --> %s \n", (char *) pair_first((const pair_t *) iterator_get_pointer(iterator)));
-                    }
-                }
-            }
-            else
-            {
-                printf("I do not know who he is...\n");
-            }
+            /******************* 评估表现 ******************/
 
             /*** See if it got it right. ***/
             if (evaluate_performance(net, &val)) {
@@ -173,17 +183,18 @@ void result_on_imagelist(BPNN *net, IMAGELIST *il, int list_errors, map_t *map_u
                 printf("No\n");
             }
 
-            printf("\n");
+            // printf("\n");
 
-            err += val;
+            *error += val;
         }
 
-        err = err / (double)n;
+        *error = *error / (double)n;
+
+        *correctRate = ((double)correct / (double)n) * 100.0;
 
         // 输出 匹配准确率 和 平均误差
-        if (!list_errors)
-            printf("Accuracy rate of: %g%%  Average error: %g \n\n",
-                   ((double)correct / (double)n) * 100.0, err);
+        // if (!list_errors)
+        //     printf("Accuracy rate of: %g%%  Average error: %g \n\n", *correctRate, *error);
     } else {
         if (!list_errors)
             printf("0.0 0.0 ");

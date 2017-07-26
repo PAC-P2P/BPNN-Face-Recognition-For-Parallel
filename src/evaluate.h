@@ -13,8 +13,8 @@
 #define true 1
 
 int evaluate_performance(BPNN *, double *);
-int performance_on_imagelist(BPNN *, IMAGELIST *, int , map_t *);
-void result_on_imagelist(BPNN *, IMAGELIST *, int , map_t *);
+int performance_on_imagelist(BPNN *, IMAGELIST *, int , map_t *, double*);
+void result_on_imagelist(BPNN *, IMAGELIST *, int , map_t *, double *, double *);
 
 
 #endif //BPNN_EVALUATE_H

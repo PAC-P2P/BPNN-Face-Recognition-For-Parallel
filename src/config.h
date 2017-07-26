@@ -29,4 +29,9 @@
 // 冲量
 #define IMPULSE 0.3
 
+// 数据集中用户名的长度
+#define  USERNAMESIZE 30
+
+
+
 #endif //BPNN_CONFIG_H

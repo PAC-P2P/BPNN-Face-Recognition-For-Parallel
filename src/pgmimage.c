@@ -277,50 +277,55 @@ int imgl_munge_name(char *buf)
 }
 
 
-//void imgl_load_images_from_textfile(IMAGELIST *il,char *filename)
-//{
-//  IMAGE *iimg;
-//  FILE *fp;
-//  char buf[20000];  // 这个字符数组长度一定要长，因为它接受的list文件流长度可能会很长
-//
-//  if (filename[0] == '\0') {
-//    printf("IMGL_LOAD_IMAGES_FROM_TEXTFILE: Invalid file '%s'\n", filename);
-//  }
-//
-//  if ((fp = fopen(filename, "r")) == NULL) {
-//    printf("IMGL_LOAD_IMAGES_FROM_TEXTFILE: Couldn't open '%s'\n", filename);
-//  }
-//
-//  while (fgets(buf, 19999, fp) != NULL) {
-//
-//    imgl_munge_name(buf);
-//    printf("Loading '%s'...", buf);  fflush(stdout);
-//    if ((iimg = img_open(buf)) == 0)
-//    {
-//      printf("Couldn't open '%s'\n", buf);
-//    }
-//    else
-//    {
-//      imgl_add(il, iimg);
-//      printf("done\n");
-//    }
-//    fflush(stdout);
-//  }
-//
-//  fclose(fp);
-//}
+void imgl_load_images_from_textfile(IMAGELIST *il,char *filename, int id, int n)
+{
+ IMAGE *iimg;
+ FILE *fp;
+ int i = 0, id_temp = id;
+ char buf[20000];  // 这个字符数组长度一定要长，因为它接受的list文件流长度可能会很长
+
+ if (filename[0] == '\0') {
+   printf("IMGL_LOAD_IMAGES_FROM_TEXTFILE: Invalid file '%s'\n", filename);
+ }
+
+ if ((fp = fopen(filename, "r")) == NULL) {
+   printf("IMGL_LOAD_IMAGES_FROM_TEXTFILE: Couldn't open '%s'\n", filename);
+ }
+
+ while (fgets(buf, 19999, fp) != NULL) {
+
+   if(i == id_temp)
+   {
+     imgl_munge_name(buf);
+     printf("Loading '%s'...", buf);  fflush(stdout);
+     if ((iimg = img_open(buf)) == 0)
+     {
+       printf("Couldn't open '%s'\n", buf);
+     }
+     else
+     {
+       imgl_add(il, iimg);
+       printf("done\n");
+     }
+     fflush(stdout);
+
+     id_temp = id_temp + n;
+   }
+   i++;
+ }
+
+ fclose(fp);
+}
 
 /***
  加载图片集
 ***/
-void imgl_load_images_from_textfile_map(IMAGELIST *il, char *filename, int id, int n, map_t *map_user) {
+void imgl_load_images_from_textfile_map(int *imagesize, char *filename, map_t *map_user) {
   IMAGE *iimg;
   FILE *fp;
   char buf[20000], userid[40];
-  int id_temp, i_userNum = 1, i = 0;
+  int i, i_userNum = 1;
   size_t mapSize = 0;
-
-  id_temp = id;
 
   if (filename[0] == '\0') {
     printf("IMGL_LOAD_IMAGES_FROM_TEXTFILE: Invalid file '%s'\n", filename);
@@ -330,15 +335,11 @@ void imgl_load_images_from_textfile_map(IMAGELIST *il, char *filename, int id, i
     printf("IMGL_LOAD_IMAGES_FROM_TEXTFILE: Couldn't open '%s'\n", filename);
   }
 
-  while (fgets(buf, 19999, fp) != NULL) {
-
-    if(i == id_temp)
-    {
-      // printf("[i = %d, n = %d]\n", i, n);
+  for (i = 0; fgets(buf, 19999, fp) != NULL; i++) {
 
       imgl_munge_name(buf);
-      printf("Loading '%s'...", buf);
-      fflush(stdout);
+      // printf("Loading '%s'...", buf);
+      // fflush(stdout);
 
       // 获取每个用户的名字
       sscanf(buf, "%*[^/]/%*[^/]/%[^/]", userid);
@@ -359,24 +360,23 @@ void imgl_load_images_from_textfile_map(IMAGELIST *il, char *filename, int id, i
 
       if(mapSize < map_size(map_user))
       {
-        printf("插入成功, [%s] --> [%d]\n", userid, i_userNum);
+        // printf("插入成功, [%s] --> [%d]\n", userid, i_userNum);
         // 插入成功
         i_userNum++;
       }
 
-      if ((iimg = img_open(buf)) == 0)
+      if(i == 0)
       {
-        printf("Couldn't open '%s'\n", buf);
-      }
-      else
-      {
-        imgl_add(il, iimg);
-        printf("done\n");
+        if ((iimg = img_open(buf)) == 0)
+        {
+          printf("Couldn't open '%s'\n", buf);
+        }
+        else{
+          *imagesize = ROWS(iimg) * COLS(iimg);
+  				// printf("\nimagesize = %d\n", imagesize);
+        }
       }
       fflush(stdout);
-      id_temp = id_temp + n;
-    }
-    i++;
   }
 
   fclose(fp);
