@@ -165,6 +165,7 @@ int main(int argc, char *argv[]) {
 
 		iterateTimes = traintimes / perTimes;
 
+		
 		for (i = 1; i <= iterateTimes; i++) {
 
 			// 选择阶段训练
@@ -228,7 +229,7 @@ int main(int argc, char *argv[]) {
 
 	/************** 结束计时****************************/
 	time+=MPI_Wtime();
-	MPI_Finalize();
+
 
 	if(id == 0)
 	{
@@ -244,11 +245,13 @@ int main(int argc, char *argv[]) {
 
 	/************** 释放内存 ****************************/
 
-	// img_free(iimg);
+	MPI_Barrier(MPI_COMM_WORLD);
 	imgl_free(trainlist);
 	imgl_free(testlist);
-	bpnn_free(net);
+	// bpnn_free(net);
 	map_destroy(map_user);
+
+	MPI_Finalize();
 
 	// MapArrayDestroy(mapUserArr, userNum+1);
 

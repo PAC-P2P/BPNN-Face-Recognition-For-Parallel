@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <omp.h>
 #include "backprop.h"
 
 #define ABS(x)          (((x) > 0.0) ? (x) : (-(x)))
@@ -87,7 +88,7 @@ double **alloc_2d_dbl(int m,int n)
     printf("ALLOC_2D_DBL: Couldn't allocate array of dbl ptrs\n");
     return (NULL);
   }
-
+  #pragma omp parallel for
   for (i = 0; i < m; i++) {
     new[i] = alloc_1d_dbl(n);
   }
@@ -101,6 +102,7 @@ void bpnn_randomize_weights(double **w,int m,int n)
 {
   int i, j;
 
+  #pragma omp parallel for
   for (i = 0; i <= m; i++) {
     for (j = 0; j <= n; j++) {
       w[i][j] = dpn1();
@@ -113,6 +115,7 @@ void bpnn_zero_weights(double **w,int m,int n)
 {
   int i, j;
 
+  #pragma omp parallel for
   for (i = 0; i <= m; i++) {
     for (j = 0; j <= n; j++) {
       w[i][j] = 0.0;
@@ -169,6 +172,7 @@ void bpnn_free(BPNN *net)
   free((char *) net->output_delta);
   free((char *) net->target);
 
+  #pragma omp parallel for
   for (i = 0; i <= n1; i++) {
     free((char *) net->input_weights[i]);
     free((char *) net->input_prev_weights[i]);
@@ -176,6 +180,7 @@ void bpnn_free(BPNN *net)
   free((char *) net->input_weights);
   free((char *) net->input_prev_weights);
 
+  #pragma omp parallel for
   for (i = 0; i <= n2; i++) {
     free((char *) net->hidden_weights[i]);
     free((char *) net->hidden_prev_weights[i]);
@@ -234,6 +239,7 @@ void bpnn_layerforward(double *l1,double *l2,double **conn,int n1,int n2)
   // 设置 阈值单元
   l1[0] = 1.0;
 
+  // omp_set_num_threads(4);
   // 遍历下一层的神经元
   /*** For each unit in second layer ***/
   for (j = 1; j <= n2; j++)
@@ -241,12 +247,14 @@ void bpnn_layerforward(double *l1,double *l2,double **conn,int n1,int n2)
     /*** Compute weighted sum of its inputs ***/
     // 计算神经元的输入加权和
     sum = 0.0;
-
-    for (k = 0; k <= n1; k++)
-    {
-      sum += conn[k][j] * l1[k];  // 净激活
-    }
-
+    // #pragma omp parallel
+    // {
+    //   #pragma omp for reduction(+:sum)
+      for (k = 0; k <= n1; k++)
+      {
+        sum += conn[k][j] * l1[k];  // 净激活
+      }
+    // }
     // 激活函数 squash == sigmoid
     l2[j] = squash(sum);
   }

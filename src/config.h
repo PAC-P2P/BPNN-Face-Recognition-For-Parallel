@@ -18,7 +18,7 @@
 #define SEED 102194
 
 // 选择阶段训练次数
-#define SELETE   10
+#define SELETE   50
 
 // 保存网络的周期(每训练几次保存网络)
 #define SAVEDELTA 100

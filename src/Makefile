@@ -4,7 +4,7 @@ BPNN:$(OBJ)
 main.o:main.c
 	mpicc -c main.c -std=c99 -fopenmp -o main.o
 backprop.o:backprop.c
-	mpicc -c backprop.c -std=c99 -lm -o backprop.o
+	mpicc -c backprop.c -std=c99 -lm -fopenmp -o backprop.o
 imagenet.o:imagenet.c
 	mpicc -c imagenet.c -std=c99 -lcstl -o imagenet.o
 pgmimage.o:pgmimage.c
